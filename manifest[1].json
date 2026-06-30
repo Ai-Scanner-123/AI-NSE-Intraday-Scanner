@@ -1,0 +1,9 @@
+{
+  "name": "AI NSE Intraday Scanner V10 PRO LIVE",
+  "short_name": "AI Scanner V10",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071120",
+  "theme_color": "#38bdf8",
+  "icons": []
+}
