@@ -1,0 +1,5 @@
+GitHub Upload Steps:
+1. GitHub repo me Add file > Upload files par click karein.
+2. Is folder ke andar ki sabhi files upload karein: index.html, manifest.json, sw.js, README.md
+3. Commit changes par click karein.
+4. Settings > Pages > Deploy from branch > main > root > Save.
