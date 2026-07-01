@@ -3,225 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI NSE Scanner V10.3 Confidence Score Upgrade</title>
+<title>AI NSE Scanner V10.4 Auto Decision</title>
 <style>
-:root{
-  --bg:#0f172a; --card:#111827; --dark:#020617; --text:#ffffff;
-  --blue:#38bdf8; --green:#22c55e; --red:#ef4444; --yellow:#facc15; --pink:#fb7185;
-}
-*{box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:15px;margin:0}
-.box{max-width:620px;margin:auto;background:var(--card);padding:18px;border-radius:16px;box-shadow:0 0 18px rgba(0,0,0,.45)}
-h2{text-align:center;color:var(--blue);margin-top:0}
-.small{text-align:center;color:#cbd5e1;font-size:13px;margin-top:-8px}
-label{font-weight:bold;margin-top:12px;display:block}
-input,select,button{width:100%;padding:12px;margin-top:6px;border-radius:9px;border:none;font-size:16px}
-button{background:var(--green);color:white;font-weight:bold;margin-top:18px;cursor:pointer}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.result{margin-top:18px;padding:15px;border-radius:14px;background:var(--dark);line-height:1.75}
-.buy{color:var(--green);font-weight:bold}.sell{color:var(--red);font-weight:bold}
-.wait{color:var(--yellow);font-weight:bold}.danger{color:var(--pink);font-weight:bold}
-.info{color:var(--blue);font-weight:bold}
-.meter{background:#334155;border-radius:20px;height:18px;overflow:hidden;margin:8px 0}
-.fill{height:100%;width:0%;background:linear-gradient(90deg,#ef4444,#facc15,#22c55e);border-radius:20px}
-.badge{display:inline-block;padding:5px 10px;border-radius:20px;background:#1e293b;margin:3px 0}
-hr{border:0;border-top:1px solid #334155;margin:14px 0}
-@media(max-width:520px){.grid{grid-template-columns:1fr}}
+body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:18px}.box{max-width:760px;margin:auto;background:#111827;padding:24px;border-radius:18px;box-shadow:0 0 18px rgba(0,0,0,.45)}h1{text-align:center;color:#38bdf8;margin:0 0 8px}.sub{text-align:center;color:#dbeafe;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{font-weight:bold;margin-bottom:6px;display:block;font-size:15px}input,select{width:100%;padding:13px;border:0;border-radius:10px;font-size:16px;box-sizing:border-box}button{width:100%;margin-top:18px;padding:15px;border:0;border-radius:12px;background:#22c55e;color:#052e16;font-size:20px;font-weight:bold;cursor:pointer}.result{margin-top:18px;padding:18px;border-radius:15px;background:#020617;border:1px solid #334155}.big{font-size:28px;font-weight:bold;text-align:center}.buy{color:#22c55e}.sell{color:#ef4444}.wait{color:#facc15}.row{display:flex;justify-content:space-between;border-bottom:1px solid #334155;padding:9px 0;gap:10px}.warn{margin-top:12px;color:#facc15;font-weight:bold}.small{font-size:13px;color:#cbd5e1;margin-top:12px;line-height:1.5}@media(max-width:650px){.grid{grid-template-columns:1fr}.box{padding:16px}}
 </style>
 </head>
 <body>
-
 <div class="box">
-<h2>AI NSE Scanner V10.3<br>Confidence Score Upgrade</h2>
-<div class="small">Manual Intraday Decision System • Loss Control • False Signal Filter</div>
-
-<label>Stock Name</label>
-<input id="stock" placeholder="Example: EXIDEIND">
-
+<h1>AI NSE Scanner V10.4</h1>
+<div class="sub">Auto Confidence Score • Entry/SL/Target • Position Size • False Signal Filter</div>
+<label>Stock Name</label><input id="stock" placeholder="Example: EXIDEIND">
 <div class="grid">
-  <div><label>Current Price</label><input id="price" type="number" step="0.01" placeholder="Current Price"></div>
-  <div><label>Previous Close</label><input id="prevClose" type="number" step="0.01" placeholder="Previous Close"></div>
-  <div><label>Day High</label><input id="high" type="number" step="0.01" placeholder="Day High"></div>
-  <div><label>Day Low</label><input id="low" type="number" step="0.01" placeholder="Day Low"></div>
-  <div><label>RSI</label><input id="rsi" type="number" step="0.01" placeholder="RSI 0-100"></div>
-  <div><label>Capital Amount ₹</label><input id="capital" type="number" value="50000"></div>
+<div><label>Current Price</label><input id="price" type="number" step="0.01" placeholder="Current Price"></div>
+<div><label>Previous Close</label><input id="prev" type="number" step="0.01" placeholder="Previous Close"></div>
+<div><label>Day High</label><input id="high" type="number" step="0.01" placeholder="Day High"></div>
+<div><label>Day Low</label><input id="low" type="number" step="0.01" placeholder="Day Low"></div>
+<div><label>RSI</label><input id="rsi" type="number" step="0.01" placeholder="RSI 0-100"></div>
+<div><label>Capital Amount ₹</label><input id="capital" type="number" value="50000"></div>
 </div>
-
-<label>Volume Strength</label>
-<select id="volume">
-<option value="high">High RVOL</option>
-<option value="normal">Normal Volume</option>
-<option value="low">Low RVOL</option>
-</select>
-
-<label>Market Trend</label>
-<select id="market">
-<option value="up">Market Up</option>
-<option value="sideways">Sideways</option>
-<option value="down">Market Down</option>
-</select>
-
-<label>Trade Type</label>
-<select id="tradeType">
-<option value="intraday">Intraday</option>
-<option value="scalp">Scalping</option>
-</select>
-
-<button onclick="scanStock()">SCAN NOW</button>
-<div id="output" class="result"></div>
+<label style="margin-top:14px">Volume Strength</label>
+<select id="vol"><option value="high">High RVOL</option><option value="normal">Normal Volume</option><option value="low">Low RVOL</option></select>
+<label style="margin-top:14px">Market Trend</label>
+<select id="trend"><option value="bullish">Market Up / Bullish</option><option value="sideways">Sideways / Neutral</option><option value="bearish">Market Down / Bearish</option></select>
+<label style="margin-top:14px">Trade Side</label>
+<select id="side"><option value="auto">Auto Decide</option><option value="buy">Buy Check</option><option value="sell">Sell Check</option></select>
+<button onclick="scan()">SCAN NOW</button>
+<div id="out" class="result" style="display:none"></div>
+<div class="small">Note: यह scanner decision support के लिए है, guarantee नहीं। Intraday में capital का 1% से ज्यादा risk न लें।</div>
 </div>
-
 <script>
-function rupee(n){return "₹"+Number(n).toFixed(2)}
-function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
-function scanStock(){
-let stock=document.getElementById("stock").value.trim()||"Stock";
-let price=parseFloat(document.getElementById("price").value);
-let high=parseFloat(document.getElementById("high").value);
-let low=parseFloat(document.getElementById("low").value);
-let prevClose=parseFloat(document.getElementById("prevClose").value);
-let rsi=parseFloat(document.getElementById("rsi").value);
-let volume=document.getElementById("volume").value;
-let market=document.getElementById("market").value;
-let capital=parseFloat(document.getElementById("capital").value);
-let tradeType=document.getElementById("tradeType").value;
-
-if(!price||!high||!low||!prevClose||!capital||isNaN(rsi)){
-document.getElementById("output").innerHTML="<span class='danger'>कृपया सभी details सही भरें।</span>";
-return;
-}
-if(high<low || price>high || price<low || rsi<0 || rsi>100){
-document.getElementById("output").innerHTML="<span class='danger'>High/Low/Price/RSI values गलत लग रही हैं। कृपया दोबारा check करें।</span>";
-return;
-}
-
-let change=((price-prevClose)/prevClose)*100;
-let range=high-low;
-let rangePos=range>0?((price-low)/range)*100:50;
-let nearHigh=((high-price)/high)*100;
-let nearLow=((price-low)/low)*100;
-
-let buyScore=0, sellScore=0, warnings=[], avoidReasons=[];
-
-// Trend/price scoring
-if(change>0.3) buyScore+=12;
-if(change<-0.3) sellScore+=12;
-if(change>1.8){buyScore-=12;warnings.push("Stock पहले से बहुत ऊपर है, chase मत करें।");}
-if(change<-1.8){sellScore-=12;warnings.push("Stock पहले से बहुत नीचे है, chase sell मत करें।");}
-
-// RSI scoring
-if(rsi>=45&&rsi<=62) buyScore+=22;
-if(rsi>=38&&rsi<45) sellScore+=8;
-if(rsi>62&&rsi<=70) buyScore+=10;
-if(rsi>=30&&rsi<=45) sellScore+=16;
-if(rsi>70){buyScore-=25;warnings.push("RSI overbought है, fresh buy risky है।");}
-if(rsi<30){sellScore-=25;warnings.push("RSI oversold है, fresh sell risky है।");}
-
-// Volume scoring
-if(volume==="high"){buyScore+=18;sellScore+=18}
-if(volume==="normal"){buyScore+=6;sellScore+=6}
-if(volume==="low"){buyScore-=25;sellScore-=25;avoidReasons.push("Low RVOL / कमजोर volume")}
-
-// Market trend scoring
-if(market==="up"){buyScore+=18;sellScore-=18}
-if(market==="down"){sellScore+=18;buyScore-=18}
-if(market==="sideways"){buyScore-=4;sellScore-=4;warnings.push("Market sideways है, confirmation जरूरी है।")}
-
-// Day position filter
-if(nearHigh<0.50){buyScore-=25;avoidReasons.push("Price day high के बहुत पास है")}
-if(nearLow<0.50){sellScore-=25;avoidReasons.push("Price day low के बहुत पास है")}
-if(rangePos>=35&&rangePos<=75){buyScore+=8;sellScore+=8}
-if(rangePos>82){warnings.push("Price upper zone में है। Fresh buy में सावधानी रखें।")}
-if(rangePos<18){warnings.push("Price lower zone में है। Fresh sell में सावधानी रखें।")}
-
-let direction="WAIT", signalClass="wait";
-let confidence=Math.max(buyScore,sellScore);
-let rawSide=buyScore-sellScore;
-
-if(buyScore>=58 && rawSide>=12 && market!=="down" && volume!=="low" && rsi<70 && nearHigh>=0.50){
-  direction=buyScore>=78?"STRONG BUY":"BUY"; signalClass="buy";
-}else if(sellScore>=58 && rawSide<=-12 && market!=="up" && volume!=="low" && rsi>30 && nearLow>=0.50){
-  direction=sellScore>=78?"STRONG SELL":"SELL"; signalClass="sell";
-}else{
-  direction="WAIT"; signalClass="wait";
-}
-
-confidence=clamp(confidence,0,100);
-if(direction==="WAIT") confidence=clamp(Math.max(buyScore,sellScore)-10,0,65);
-
-let riskPct=tradeType==="scalp"?0.006:0.008;
-let target1Pct=tradeType==="scalp"?0.009:0.012;
-let target2Pct=tradeType==="scalp"?0.014:0.020;
-
-let entry=price, sl=0, t1=0, t2=0, entryLow=0, entryHigh=0, trail=0;
-if(direction.includes("BUY")){
-  sl=price*(1-riskPct); t1=price*(1+target1Pct); t2=price*(1+target2Pct);
-  entryLow=price*0.998; entryHigh=price*1.002; trail=price*1.006;
-}else if(direction.includes("SELL")){
-  sl=price*(1+riskPct); t1=price*(1-target1Pct); t2=price*(1-target2Pct);
-  entryLow=price*0.998; entryHigh=price*1.002; trail=price*0.994;
-}
-
-let riskPerTrade=capital*0.01;
-let maxDailyLoss=capital*0.02;
-let riskPerShare=Math.abs(entry-sl);
-let qty=riskPerShare>0?Math.floor(riskPerTrade/riskPerShare):0;
-let maxQty=Math.floor((capital*0.70)/price);
-
-let rr1=0, rr2=0;
-if(direction.includes("BUY")){rr1=(t1-entry)/(entry-sl); rr2=(t2-entry)/(entry-sl)}
-if(direction.includes("SELL")){rr1=(entry-t1)/(sl-entry); rr2=(entry-t2)/(sl-entry)}
-
-let quality="AVOID", qClass="danger";
-if(direction.includes("STRONG") && confidence>=78 && rr1>=1.3){quality="EXCELLENT";qClass="buy"}
-else if(direction!=="WAIT" && confidence>=65 && rr1>=1.2){quality="GOOD TRADE";qClass="buy"}
-else if(direction!=="WAIT"){quality="RISKY TRADE";qClass="wait"}
-
-let marketStatus = market==="up" ? "🟢 Trending Up" : market==="down" ? "🔴 Weak Market" : "🟡 Sideways";
-let action = direction==="WAIT" ? "Trade avoid करें, better setup का wait करें।" :
-             direction.includes("BUY") ? "Entry zone में मिले तभी Buy करें।" :
-             "Entry zone में मिले तभी Sell करें।";
-
-let warningText=warnings.length?warnings.map(w=>`<span class="danger">⚠ ${w}</span><br>`).join(""):"";
-let avoidText=avoidReasons.length?avoidReasons.map(w=>`• ${w}<br>`).join(""):"";
-let meterWidth=confidence.toFixed(0)+"%";
-
-document.getElementById("output").innerHTML=`
-<b>Stock:</b> ${stock}<br>
-<b>Price:</b> ${rupee(price)} | <b>Change:</b> ${change.toFixed(2)}%<br>
-<b>Market Status:</b> ${marketStatus}<br>
-<b>Day Range Position:</b> ${rangePos.toFixed(0)}%<br><hr>
-
-<b>Final Signal:</b> <span class="${signalClass}">${direction}</span><br>
-<b>Confidence Score:</b> <span class="${signalClass}">${confidence.toFixed(0)}%</span>
-<div class="meter"><div class="fill" style="width:${meterWidth}"></div></div>
-<b>Trade Quality:</b> <span class="${qClass}">${quality}</span><br>
-<b>Action:</b> ${action}<br><br>
-
-${warningText}
-${direction==="WAIT" ? `<span class="danger"><b>Avoid Reasons:</b></span><br>${avoidText || "• Confirmation पूरा नहीं है।<br>"}` : ""}
-
-<hr><span class="info">Entry / Exit Plan</span><br>
-<b>Ideal Entry Zone:</b> ${direction==="WAIT" ? "No Trade" : rupee(entryLow)+" - "+rupee(entryHigh)}<br>
-<b>Entry:</b> ${direction==="WAIT" ? "No Trade" : rupee(entry)}<br>
-<b>Stop Loss:</b> ${direction==="WAIT" ? "No Trade" : rupee(sl)}<br>
-<b>Target 1:</b> ${direction==="WAIT" ? "No Trade" : rupee(t1)}<br>
-<b>Target 2:</b> ${direction==="WAIT" ? "No Trade" : rupee(t2)}<br>
-<b>Trailing Stop After T1:</b> ${direction==="WAIT" ? "No Trade" : rupee(trail)}<br>
-<b>Risk Reward T1:</b> ${rr1.toFixed(2)}<br>
-<b>Risk Reward T2:</b> ${rr2.toFixed(2)}<br>
-
-<hr><span class="info">Loss Control Plan</span><br>
-<b>Capital:</b> ₹${capital.toFixed(0)}<br>
-<b>Risk Per Trade:</b> ₹${riskPerTrade.toFixed(0)} only<br>
-<b>Max Daily Loss:</b> ₹${maxDailyLoss.toFixed(0)}<br>
-<b>Suggested Qty:</b> ${direction==="WAIT" ? 0 : qty}<br>
-<b>Maximum Qty Limit:</b> ${maxQty}<br><br>
-
-<span class="danger">Rule: Stop Loss hit होते ही exit करें। Average मत करें। एक दिन में 2 loss के बाद trading बंद करें।</span>
-`;
+function n(id){return parseFloat(document.getElementById(id).value)||0}
+function scan(){
+ let stock=document.getElementById('stock').value||'STOCK';
+ let price=n('price'),prev=n('prev'),high=n('high'),low=n('low'),rsi=n('rsi'),capital=n('capital');
+ let vol=document.getElementById('vol').value,trend=document.getElementById('trend').value,side=document.getElementById('side').value;
+ if(!price||!prev||!high||!low||!rsi||!capital){alert('कृपया सभी values भरें');return}
+ let chg=((price-prev)/prev)*100, range=high-low, pos=(price-low)/range*100;
+ let buy=0,sell=0,notes=[];
+ if(chg>0)buy+=18; else sell+=18;
+ if(price>prev)buy+=12; else sell+=12;
+ if(pos>60)buy+=12; if(pos<40)sell+=12;
+ if(rsi>=45&&rsi<=68)buy+=18; if(rsi>=32&&rsi<=55)sell+=18;
+ if(rsi>72){buy-=18;notes.push('RSI ज्यादा है: Buy chase न करें');}
+ if(rsi<28){sell-=18;notes.push('RSI बहुत कम है: Sell chase न करें');}
+ if(vol==='high'){buy+=14;sell+=14}else if(vol==='normal'){buy+=6;sell+=6}else{buy-=18;sell-=18;notes.push('Low RVOL: Signal weak है');}
+ if(trend==='bullish'){buy+=16;sell-=12}else if(trend==='bearish'){sell+=16;buy-=12}else{buy+=4;sell+=4}
+ let finalSide=side==='auto'?(buy>=sell?'BUY':'SELL'):(side==='buy'?'BUY':'SELL');
+ let conf=Math.max(0,Math.min(100, finalSide==='BUY'?buy:sell));
+ let signal='WAIT / AVOID', cls='wait';
+ if(conf>=75){signal=finalSide+' - STRONG'; cls=finalSide==='BUY'?'buy':'sell'}
+ else if(conf>=60){signal=finalSide+' - MODERATE'; cls=finalSide==='BUY'?'buy':'sell'}
+ if(finalSide==='BUY'&&trend==='bearish'&&conf<75){signal='WAIT / AVOID';cls='wait';notes.push('Market bearish है, Buy avoid बेहतर है');}
+ if(finalSide==='SELL'&&trend==='bullish'&&conf<75){signal='WAIT / AVOID';cls='wait';notes.push('Market bullish है, Sell avoid बेहतर है');}
+ let entry=price, sl, target1, target2;
+ if(finalSide==='BUY'){sl=Math.max(low, price-(range*.35)); target1=price+(price-sl)*1.5; target2=price+(price-sl)*2;}
+ else{sl=Math.min(high, price+(range*.35)); target1=price-(sl-price)*1.5; target2=price-(sl-price)*2;}
+ let riskPerShare=Math.abs(entry-sl), maxRisk=capital*.01, qty=Math.floor(maxRisk/riskPerShare);
+ if(qty<1){qty=0;notes.push('Risk high है: Quantity 0 या very small रखें');}
+ let quality=conf>=80?'Excellent':conf>=70?'Good':conf>=60?'Average':'Avoid';
+ document.getElementById('out').style.display='block';
+ document.getElementById('out').innerHTML=`
+ <div class="big ${cls}">${signal}</div>
+ <div class="row"><b>Stock</b><span>${stock}</span></div>
+ <div class="row"><b>Confidence Score</b><span>${conf.toFixed(0)}%</span></div>
+ <div class="row"><b>Trade Quality</b><span>${quality}</span></div>
+ <div class="row"><b>Entry</b><span>₹${entry.toFixed(2)}</span></div>
+ <div class="row"><b>Stop Loss</b><span>₹${sl.toFixed(2)}</span></div>
+ <div class="row"><b>Target 1</b><span>₹${target1.toFixed(2)}</span></div>
+ <div class="row"><b>Target 2</b><span>₹${target2.toFixed(2)}</span></div>
+ <div class="row"><b>Risk/Reward</b><span>1 : 1.5 / 1 : 2</span></div>
+ <div class="row"><b>Safe Quantity</b><span>${qty} shares</span></div>
+ <div class="row"><b>Max Risk</b><span>₹${maxRisk.toFixed(0)} approx</span></div>
+ <div class="row"><b>Price Change</b><span>${chg.toFixed(2)}%</span></div>
+ ${notes.length?'<div class="warn">⚠️ '+notes.join('<br>⚠️ ')+'</div>':''}
+ `;
 }
 </script>
-
 </body>
 </html>
