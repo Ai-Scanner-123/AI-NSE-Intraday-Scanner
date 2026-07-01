@@ -3,16 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI NSE Scanner V11 PRO Decision Quality</title>
+<title>AI NSE Scanner V11 PRO Live Data</title>
 <style>
-body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:18px}.box{max-width:820px;margin:auto;background:#111827;padding:24px;border-radius:18px;box-shadow:0 0 18px rgba(0,0,0,.45)}h1{text-align:center;color:#38bdf8;margin:0 0 8px}.sub{text-align:center;color:#dbeafe;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{font-weight:bold;margin-bottom:6px;display:block;font-size:15px}input,select{width:100%;padding:13px;border:0;border-radius:10px;font-size:16px;box-sizing:border-box}button{width:100%;margin-top:18px;padding:15px;border:0;border-radius:12px;background:#22c55e;color:#052e16;font-size:20px;font-weight:bold;cursor:pointer}.result{margin-top:18px;padding:18px;border-radius:15px;background:#020617;border:1px solid #334155}.big{font-size:30px;font-weight:bold;text-align:center}.buy{color:#22c55e}.sell{color:#ef4444}.wait{color:#facc15}.row{display:flex;justify-content:space-between;border-bottom:1px solid #334155;padding:9px 0;gap:10px}.tag{display:inline-block;padding:5px 10px;border-radius:999px;background:#1e293b;margin:3px}.warn{margin-top:12px;color:#facc15;font-weight:bold}.bad{color:#fb7185}.good{color:#86efac}.small{font-size:13px;color:#cbd5e1;margin-top:12px;line-height:1.5}.reason{line-height:1.7;margin-top:12px}.pill{font-weight:bold;padding:4px 8px;border-radius:8px;background:#172554;color:#bfdbfe}@media(max-width:650px){.grid{grid-template-columns:1fr}.box{padding:16px}.row{display:block}}
+body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:18px}.box{max-width:820px;margin:auto;background:#111827;padding:24px;border-radius:18px;box-shadow:0 0 18px rgba(0,0,0,.45)}h1{text-align:center;color:#38bdf8;margin:0 0 8px}.sub{text-align:center;color:#dbeafe;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{font-weight:bold;margin-bottom:6px;display:block;font-size:15px}input,select{width:100%;padding:13px;border:0;border-radius:10px;font-size:16px;box-sizing:border-box}button{width:100%;margin-top:18px;padding:15px;border:0;border-radius:12px;background:#22c55e;color:#052e16;font-size:20px;font-weight:bold;cursor:pointer}.btn2{background:#38bdf8;color:#082f49;margin-top:10px}.status{margin-top:10px;color:#cbd5e1;font-size:14px;line-height:1.5}.result{margin-top:18px;padding:18px;border-radius:15px;background:#020617;border:1px solid #334155}.big{font-size:30px;font-weight:bold;text-align:center}.buy{color:#22c55e}.sell{color:#ef4444}.wait{color:#facc15}.row{display:flex;justify-content:space-between;border-bottom:1px solid #334155;padding:9px 0;gap:10px}.tag{display:inline-block;padding:5px 10px;border-radius:999px;background:#1e293b;margin:3px}.warn{margin-top:12px;color:#facc15;font-weight:bold}.bad{color:#fb7185}.good{color:#86efac}.small{font-size:13px;color:#cbd5e1;margin-top:12px;line-height:1.5}.reason{line-height:1.7;margin-top:12px}.pill{font-weight:bold;padding:4px 8px;border-radius:8px;background:#172554;color:#bfdbfe}@media(max-width:650px){.grid{grid-template-columns:1fr}.box{padding:16px}.row{display:block}}
 </style>
 </head>
 <body>
 <div class="box">
 <h1>AI NSE Scanner V11 PRO</h1>
-<div class="sub">Decision Quality Engine • Grade • Fake Breakout Filter • Entry/SL/Targets</div>
+<div class="sub">Decision Quality Engine • Live Data Test • Grade • Entry/SL/Targets</div>
 <label>Stock Name</label><input id="stock" placeholder="Example: EXIDEIND">
+<button class="btn2" onclick="fetchLiveData()">FETCH LIVE DATA</button>
+<div id="liveStatus" class="status">Stock name डालकर Fetch Live Data दबाएँ। Example: EXIDEIND, TCS, WIPRO</div>
 <div class="grid">
 <div><label>Current Price</label><input id="price" type="number" step="0.01" placeholder="Current Price"></div>
 <div><label>Previous Close</label><input id="prev" type="number" step="0.01" placeholder="Previous Close"></div>
@@ -32,6 +34,43 @@ body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;paddin
 <div class="small">Note: यह scanner intraday decision support के लिए है, profit guarantee नहीं। Capital का 1% से ज्यादा risk न लें। News/event वाले stocks में extra सावधानी रखें।</div>
 </div>
 <script>
+function setVal(id,val){ if(val!==undefined && val!==null && !isNaN(val)) document.getElementById(id).value=Number(val).toFixed(2); }
+function calcRSI(closes, period=14){
+ if(!closes || closes.length < period+1) return null;
+ let gains=0, losses=0;
+ for(let i=closes.length-period;i<closes.length;i++){let d=closes[i]-closes[i-1]; if(d>=0) gains+=d; else losses-=d;}
+ let avgGain=gains/period, avgLoss=losses/period;
+ if(avgLoss===0) return 100;
+ let rs=avgGain/avgLoss; return 100-(100/(1+rs));
+}
+async function fetchLiveData(){
+ const status=document.getElementById('liveStatus');
+ let raw=(document.getElementById('stock').value||'').trim().toUpperCase();
+ if(!raw){alert('पहले Stock Name डालें');return;}
+ let symbol=raw.includes('.')?raw:raw+'.NS';
+ status.innerHTML='Live data fetch हो रहा है...';
+ try{
+   const url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval=1m&range=1d';
+   const res=await fetch(url);
+   if(!res.ok) throw new Error('API response not OK');
+   const data=await res.json();
+   const r=data.chart && data.chart.result && data.chart.result[0];
+   if(!r) throw new Error('Data not found');
+   const meta=r.meta||{}, q=(r.indicators.quote&&r.indicators.quote[0])||{};
+   const closes=(r.indicators.quote[0].close||[]).filter(x=>x!==null);
+   const vols=(q.volume||[]).filter(x=>x!==null);
+   let price=meta.regularMarketPrice || closes[closes.length-1];
+   let prev=meta.previousClose || meta.chartPreviousClose;
+   let high=meta.regularMarketDayHigh || Math.max(...(q.high||[]).filter(x=>x!==null));
+   let low=meta.regularMarketDayLow || Math.min(...(q.low||[]).filter(x=>x!==null));
+   setVal('price',price); setVal('prev',prev); setVal('high',high); setVal('low',low);
+   let rsi=calcRSI(closes); if(rsi) setVal('rsi',rsi);
+   if(vols.length>5){let last=vols[vols.length-1]||0; let avg=vols.slice(0,-1).reduce((a,b)=>a+b,0)/(vols.length-1); let v= last>avg*1.5?'high': last<avg*0.7?'low':'normal'; document.getElementById('vol').value=v;}
+   status.innerHTML='✅ Data भर गया। अब SCAN NOW दबाएँ। Note: यह unofficial Yahoo Finance data है, थोड़ा delay/limit हो सकता है।';
+ }catch(e){
+   status.innerHTML='⚠ Live data fetch नहीं हुआ। Manual values भरकर scanner use करें। बाद में हम proper Angel/Upstox API backend जोड़ेंगे।';
+ }
+}
 function n(id){return parseFloat(document.getElementById(id).value)||0}
 function money(x){return '₹'+Number(x).toFixed(2)}
 function clamp(x,min,max){return Math.max(min,Math.min(max,x))}
