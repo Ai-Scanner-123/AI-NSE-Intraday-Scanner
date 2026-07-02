@@ -53,25 +53,27 @@ async function fetchLiveData(){
  let symbol=raw.includes('.')?raw:raw+'.NS';
  status.innerHTML='Live data fetch हो रहा है...';
  try{
-   const url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval=1m&range=1d';
-   const res=await fetch(url);
-   if(!res.ok) throw new Error('API response not OK');
-   const data=await res.json();
-   const r=data.chart && data.chart.result && data.chart.result[0];
-   if(!r) throw new Error('Data not found');
-   const meta=r.meta||{}, q=(r.indicators.quote&&r.indicators.quote[0])||{};
-   const closes=(r.indicators.quote[0].close||[]).filter(x=>x!==null);
-   const vols=(q.volume||[]).filter(x=>x!==null);
-   let price=meta.regularMarketPrice || closes[closes.length-1];
-   let prev=meta.previousClose || meta.chartPreviousClose;
-   let high=meta.regularMarketDayHigh || Math.max(...(q.high||[]).filter(x=>x!==null));
-   let low=meta.regularMarketDayLow || Math.min(...(q.low||[]).filter(x=>x!==null));
-   setVal('price',price); setVal('prev',prev); setVal('high',high); setVal('low',low);
-   let rsi=calcRSI(closes); if(rsi) setVal('rsi',rsi);
-   if(vols.length>5){let last=vols[vols.length-1]||0; let avg=vols.slice(0,-1).reduce((a,b)=>a+b,0)/(vols.length-1); let v= last>avg*1.5?'high': last<avg*0.7?'low':'normal'; document.getElementById('vol').value=v;}
-   status.innerHTML='✅ Data भर गया। अब SCAN NOW दबाएँ। Note: यह unofficial Yahoo Finance data है, थोड़ा delay/limit हो सकता है।';
- }catch(e){
-   status.innerHTML='⚠ Live data fetch नहीं हुआ। Manual values भरकर scanner use करें। बाद में हम proper Angel/Upstox API backend जोड़ेंगे।';
+   const url = `${BACKEND_URL}/api/market/quote?symbol=${encodeURIComponent(raw)}`;
+const res = await fetch(url);
+if(!res.ok) throw new Error('Backend response not OK');
+
+const data = await res.json();
+const q = data.data || data.quote || data;
+
+let price = q.ltp || q.price || q.lastPrice || q.close;
+let prev  = q.previousClose || q.prevClose || q.close || price;
+let high  = q.high || q.dayHigh || price;
+let low   = q.low || q.dayLow || price;
+
+setVal('price', price);
+setVal('prev', prev);
+setVal('high', high);
+setVal('low', low);
+
+if(q.rsi) setVal('rsi', q.rsi);
+
+status.innerHTML = '✅ Backend से data भर गया। अब SCAN NOW दबाएँ।';
+ }catch(e){Backend से data नहीं आया। SmartAPI approval के बाद live data चलेगा।
  }
 }
 function n(id){return parseFloat(document.getElementById(id).value)||0}
