@@ -10,7 +10,7 @@ body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;paddin
 </head>
 <body>  
  <script>
-const BACKEND_URL = "https://angel-v11-backend.onrender.com";
+const BACKEND_URL = "https://angel-v11-backend-2.onrender.com";
  </script>
 <div class="box">
 <h1>AI NSE Scanner V11 PRO</h1>
@@ -53,8 +53,15 @@ async function fetchLiveData(){
  let symbol=raw.includes('.')?raw:raw+'.NS';
  status.innerHTML='Live data fetch हो रहा है...';
  try{
-   const url = `${BACKEND_URL}/api/market/quote?symbol=${encodeURIComponent(raw)}`;
-const res = await fetch(url);
+   const res = await fetch(`${BACKEND_URL}/api/market/quote`, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        symbol: raw
+    })
+});
 if(!res.ok) throw new Error('Backend response not OK');
 
 const data = await res.json();
