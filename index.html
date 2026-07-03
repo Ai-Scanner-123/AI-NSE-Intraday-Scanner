@@ -73,8 +73,10 @@ setVal('low', low);
 if(q.rsi) setVal('rsi', q.rsi);
 
 status.innerHTML = '✅ Backend से data भर गया। अब SCAN NOW दबाएँ।';
- }catch(e){Backend से data नहीं आया। SmartAPI approval के बाद live data चलेगा।
- }
+}catch(e){
+    console.error(e);
+    status.innerHTML = '❌ Backend से data नहीं आया। SmartAPI approval के बाद live data चलेगा।';
+}
 }
 function n(id){return parseFloat(document.getElementById(id).value)||0}
 function money(x){return '₹'+Number(x).toFixed(2)}
