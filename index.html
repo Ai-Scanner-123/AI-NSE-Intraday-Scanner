@@ -141,11 +141,35 @@ function scan(){
  else{sl=price+slDist;t1=price-slDist*1.5;t2=price-slDist*2.2;t3=price-slDist*3;}
  let riskPerShare=Math.abs(entry-sl), riskAmt=capital*0.01, qty=Math.floor(riskAmt/riskPerShare);
  let rr1=(Math.abs(t1-entry)/riskPerShare).toFixed(1), rr2=(Math.abs(t2-entry)/riskPerShare).toFixed(1), rr3=(Math.abs(t3-entry)/riskPerShare).toFixed(1);
+  let tradeDecision='NO TRADE ❌';
+let tradeClass='sell';
+
+if(
+    conf >= 80 &&
+    warnings.length <= 1 &&
+    vol !== 'low' &&
+    (
+      (finalSide === 'buy' && trend === 'bullish') ||
+      (finalSide === 'sell' && trend === 'bearish')
+    )
+){
+    tradeDecision='TRADE ALLOWED ✅';
+    tradeClass='buy';
+}
+else if(conf>=65 && vol!=='low'){
+    tradeDecision='WAIT / CONFIRMATION ⏳';
+    tradeClass='wait';
+}
+else{
+    tradeDecision='NO TRADE ❌';
+    tradeClass='sell';
+}
  if(signal==='WAIT / AVOID'){warnings.push('⚠ Confidence कम है: trade skip करना बेहतर');}
  document.getElementById('out').style.display='block';
  document.getElementById('out').innerHTML=`
  <div class="big ${cls}">${signal}</div>
  <div style="text-align:center;margin:8px 0"><span class="pill">Confidence ${conf}%</span> <span class="pill">Grade ${grade}</span></div>
+  <div class="big ${tradeClass}" style="font-size:24px;margin:10px 0;">${tradeDecision}</div>
  <div class="row"><b>Stock</b><span>${stock}</span></div>
  <div class="row"><b>Entry</b><span>${money(entry)}</span></div>
  <div class="row"><b>Stop Loss</b><span>${money(sl)}</span></div>
