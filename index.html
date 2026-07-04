@@ -392,6 +392,71 @@ function fillQuote(q){
 
 
 
+
+// ===== Fallback Corporate Calendar =====
+// Backend events API fail होने पर यह local backup काम करेगा.
+// Dates को बाद में backend से auto रखेंगे.
+const FALLBACK_EVENTS = {
+  HCLTECH: {
+    resultDate: "2026-07-13",
+    eventType: "Q1 FY27 Result",
+    dividend: "Board may consider interim dividend"
+  },
+  TCS: {
+    resultDate: "2026-07-09",
+    eventType: "Quarterly Result"
+  },
+  WIPRO: {
+    resultDate: "2026-07-17",
+    eventType: "Quarterly Result"
+  },
+  INFY: {
+    resultDate: "2026-07-16",
+    eventType: "Quarterly Result"
+  }
+};
+
+function showCorporateEventBox(symbol, ev){
+  const box = document.getElementById("resultAlert");
+  if(!box || !ev || !ev.resultDate) return false;
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const resultDate = new Date(ev.resultDate + "T00:00:00");
+  resultDate.setHours(0,0,0,0);
+
+  const diffDays = Math.ceil((resultDate - today) / (1000 * 60 * 60 * 24));
+
+  if(diffDays >= 0 && diffDays <= 5){
+    let dayText = diffDays === 0 ? "आज result day है।" : `${diffDays} दिन बाद result है।`;
+
+    box.style.display = "block";
+    box.innerHTML = `
+      <div class="title">⚠ RESULT ALERT</div>
+      <b>${symbol}</b> कंपनी का ${ev.eventType || "Result"} आने वाला है।<br>
+      Result Date: <b>${ev.resultDate}</b><br>
+      ${dayText}<br>
+      ${ev.dividend ? `Dividend Note: <b>${ev.dividend}</b><br>` : ""}
+      Intraday trade में extra सावधानी रखें। Position size कम रखें।
+    `;
+    return true;
+  }
+
+  if(diffDays < 0 && diffDays >= -2){
+    box.style.display = "block";
+    box.innerHTML = `
+      <div class="title">✅ RESULT DECLARED RECENTLY</div>
+      <b>${symbol}</b> का result recently declared हुआ है।<br>
+      Result Date: <b>${ev.resultDate}</b><br>
+      Result के बाद volatility ज्यादा हो सकती है।
+    `;
+    return true;
+  }
+
+  return false;
+}
+
 // ===== Automatic Corporate Action / Result Alert Engine =====
 // Backend में /api/market/events endpoint जुड़ने के बाद यह automatic live काम करेगा.
 // Expected backend response:
@@ -415,6 +480,13 @@ async function checkCorporateEvents(symbol){
   box.style.display = "none";
   box.innerHTML = "";
 
+  // पहले local fallback check करेगा, ताकि HCLTECH जैसे result alert तुरंत दिखें.
+  const fallbackEvent = FALLBACK_EVENTS[symbol];
+  let fallbackShown = false;
+  if(fallbackEvent){
+    fallbackShown = showCorporateEventBox(symbol, fallbackEvent);
+  }
+
   try{
     const res = await fetch(`${BACKEND_URL}/api/market/events`, {
       method: "POST",
@@ -435,36 +507,8 @@ async function checkCorporateEvents(symbol){
       return;
     }
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    const resultDate = new Date(ev.resultDate + "T00:00:00");
-    resultDate.setHours(0,0,0,0);
-
-    const diffDays = Math.ceil((resultDate - today) / (1000 * 60 * 60 * 24));
-
-    if(diffDays >= 0 && diffDays <= 5){
-      let dayText = diffDays === 0 ? "आज result day है।" : `${diffDays} दिन बाद result है।`;
-
-      box.style.display = "block";
-      box.innerHTML = `
-        <div class="title">⚠ RESULT ALERT</div>
-        <b>${symbol}</b> कंपनी का ${ev.eventType || "Result"} आने वाला है।<br>
-        Result Date: <b>${ev.resultDate}</b><br>
-        ${dayText}<br>
-        Intraday trade में extra सावधानी रखें। Position size कम रखें।
-      `;
-      return;
-    }
-
-    if(diffDays < 0 && diffDays >= -2){
-      box.style.display = "block";
-      box.innerHTML = `
-        <div class="title">✅ RESULT DECLARED RECENTLY</div>
-        <b>${symbol}</b> का result recently declared हुआ है।<br>
-        Result Date: <b>${ev.resultDate}</b><br>
-        Result के बाद volatility ज्यादा हो सकती है।
-      `;
+    // Backend से fresh data आए तो fallback को replace/update कर देगा.
+    if(showCorporateEventBox(symbol, ev)){
       return;
     }
 
@@ -493,7 +537,7 @@ async function checkCorporateEvents(symbol){
     }
   }
   catch(e){
-    console.log("Corporate event check skipped:", e.message);
+    console.log("Corporate event check skipped, fallback used if available:", e.message);
   }
 }
 
