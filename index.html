@@ -126,7 +126,29 @@ function scan(){
  if(nearLow<0.20 && vol!=='high'){warnings.push('⚠ Low के पास breakdown है लेकिन RVOL strong नहीं: fake breakdown risk');sellScore-=12;}
  // Decide side
  let finalSide=side;
- if(side==='auto') finalSide=buyScore>=sellScore?'buy':'sell';
+ let finalSide = side;
+
+if(side === 'auto'){
+    finalSide = buyScore >= sellScore ? 'buy' : 'sell';
+}
+    // ===== Support / Resistance =====
+let resistance = high;
+let support = low;
+
+let nearResistance = ((resistance - price) / price) * 100;
+let nearSupport = ((price - support) / price) * 100;
+
+// BUY resistance के बिल्कुल पास हो तो सावधानी
+if (finalSide === 'buy' && nearResistance <= 0.30) {
+    warnings.push('⚠ Resistance बहुत पास है - Breakout का इंतज़ार करें');
+    buyScore -= 12;
+}
+
+// SELL support के बिल्कुल पास हो तो सावधानी
+if (finalSide === 'sell' && nearSupport <= 0.30) {
+    warnings.push('⚠ Support बहुत पास है - Breakdown का इंतज़ार करें');
+    sellScore -= 12;
+}
  let conf=finalSide==='buy'?buyScore:sellScore;
 conf=clamp(Math.round(conf),0,95);
  let signal='WAIT / AVOID', cls='wait';
