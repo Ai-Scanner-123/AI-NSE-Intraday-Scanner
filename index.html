@@ -128,7 +128,7 @@ function scan(){
  let finalSide=side;
  if(side==='auto') finalSide=buyScore>=sellScore?'buy':'sell';
  let conf=finalSide==='buy'?buyScore:sellScore;
- conf=clamp(Math.round(conf),0,100);
+conf=clamp(Math.round(conf),0,95);
  let signal='WAIT / AVOID', cls='wait';
  if(finalSide==='buy'&&conf>=80){signal='STRONG BUY';cls='buy'}
  else if(finalSide==='buy'&&conf>=65){signal='BUY';cls='buy'}
