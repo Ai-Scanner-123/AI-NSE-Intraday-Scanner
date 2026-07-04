@@ -266,26 +266,6 @@ document.addEventListener("keydown", function(e){
 Stock name डालकर Fetch Live Data दबाएँ। Example: EXIDEIND, TCS, WIPRO
 </div>
 
-<div id="liveBox" class="liveBox">
-  <div class="liveTitle" id="liveTitle">LIVE MARKET DATA</div>
-  <div class="liveGrid">
-    <div class="liveItem">
-      <div class="liveLabel">💰 Price</div>
-      <div class="liveValue" id="livePrice">₹0.00</div>
-    </div>
-    <div class="liveItem">
-      <div class="liveLabel">📈 High</div>
-      <div class="liveValue" id="liveHigh">₹0.00</div>
-    </div>
-    <div class="liveItem">
-      <div class="liveLabel">📉 Low</div>
-      <div class="liveValue" id="liveLow">₹0.00</div>
-    </div>
-    <div class="liveItem">
-      <div class="liveLabel">🔄 Prev Close</div>
-      <div class="liveValue" id="livePrev">₹0.00</div>
-    </div>
-  </div>
 </div>
 
 <div id="resultAlert" class="resultAlert"></div>
@@ -542,12 +522,7 @@ async function checkCorporateEvents(symbol){
 }
 
 function updateLiveBox(symbol, filled){
-  document.getElementById("liveBox").style.display = "block";
-  document.getElementById("liveTitle").innerHTML = `LIVE MARKET DATA - ${symbol}`;
-  document.getElementById("livePrice").innerHTML = `₹${Number(filled.price).toFixed(2)}`;
-  document.getElementById("liveHigh").innerHTML = `₹${Number(filled.high).toFixed(2)}`;
-  document.getElementById("liveLow").innerHTML = `₹${Number(filled.low).toFixed(2)}`;
-  document.getElementById("livePrev").innerHTML = `₹${Number(filled.prev).toFixed(2)}`;
+  // Live market data upper box removed as requested.
 }
 
 async function fetchLiveData(){
@@ -606,7 +581,7 @@ async function fetchLiveData(){
   }
   catch(e){
     console.error(e);
-    document.getElementById("liveBox").style.display = "none";
+    const liveBoxEl = document.getElementById("liveBox"); if(liveBoxEl) liveBoxEl.style.display = "none";
     document.getElementById("resultAlert").style.display = "none";
     status.innerHTML = `❌ ${raw} का live data नहीं आया। Symbol सही डालें या backend check करें। Example: HCLTECH, TCS, WIPRO`;
   }
