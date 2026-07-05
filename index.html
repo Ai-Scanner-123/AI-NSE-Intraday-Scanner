@@ -718,7 +718,16 @@ if(nearLow < 0.25 && vol !== "high"){
   warnings.push("⚠ Low के पास है लेकिन volume strong नहीं");
   sellScore -= 15;
 }
+// ===== Bounce / Breakdown Confirmation =====
+if (pos <= 20 && change < 0.20) {
+    buyScore -= 12;
+    warnings.push("⚠ Bounce confirm nahi hua - BUY jaldi ho sakta hai");
+}
 
+if (pos >= 80 && change > -0.20) {
+    sellScore -= 12;
+    warnings.push("⚠ Breakdown confirm nahi hua - SELL jaldi ho sakta hai");
+}
 // ===== Final Side Decide =====
 let finalSide = side;
 
