@@ -570,7 +570,7 @@ async function fetchLiveData(){
 
     const data = await res.json();
     const q = data.data || data.quote || data;
-
+console.log("Backend Quote:", q);
     quoteCache[raw] = {
       time: Date.now(),
       data: q
