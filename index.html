@@ -363,9 +363,11 @@ function fillQuote(q){
   setVal("high", high);
   setVal("low", low);
 
-  if(q.rsi){
+  if (q.rsi !== undefined && q.rsi !== null) {
     setVal("rsi", q.rsi);
-  }
+} else {
+    setVal("rsi", "N/A");
+}
 
   return { price, prev, high, low };
 }
