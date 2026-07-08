@@ -749,12 +749,24 @@ function scan(){
   if(cls === "buy"){
     buyChecks.filter(x => x.ok).forEach(x => reasons.push("✔ " + x.text));
     if(vol === "high") reasons.push("✔ High RVOL: move strong है");
-    sellChecks.filter(x => x.ok).slice(0,4).forEach(x => warnings.push("⚠ Buy के against: " + x.text));
+
+    // Sirf real bearish conditions ko caution me dikhayenge.
+    // High RVOL direction-neutral hai, isliye kabhi BUY ke against nahi dikhana.
+    sellChecks
+      .filter(x => x.ok && !x.text.includes("RVOL") && !x.text.includes("Volume"))
+      .slice(0,3)
+      .forEach(x => warnings.push("⚠ Caution: " + x.text));
   }
   else if(cls === "sell"){
     sellChecks.filter(x => x.ok).forEach(x => reasons.push("✔ " + x.text));
     if(vol === "high") reasons.push("✔ High RVOL: move strong है");
-    buyChecks.filter(x => x.ok).slice(0,4).forEach(x => warnings.push("⚠ Sell के against: " + x.text));
+
+    // Sirf real bullish conditions ko caution me dikhayenge.
+    // High RVOL direction-neutral hai, isliye kabhi SELL ke against nahi dikhana.
+    buyChecks
+      .filter(x => x.ok && !x.text.includes("RVOL") && !x.text.includes("Volume"))
+      .slice(0,3)
+      .forEach(x => warnings.push("⚠ Caution: " + x.text));
   }
   else{
     reasons.push(`➜ Bullish strength: ${buyStrength}% (${buyScore}/${maxDirectionalScore})`);
@@ -769,6 +781,11 @@ function scan(){
   if(rsi < 30) warnings.push("⚠ RSI oversold है");
   if(vol === "low") warnings.push("⚠ Low RVOL: trade avoid बेहतर");
   if(trend === "sideways") warnings.push("⚠ Sideways market: wait बेहतर");
+
+  // Safety cleanup: High RVOL kabhi bhi opposite/against warning nahi hoga.
+  for(let i = warnings.length - 1; i >= 0; i--){
+    if(warnings[i].includes("High RVOL") && warnings[i].includes("against")) warnings.splice(i, 1);
+  }
 
   let conf;
   if(signal === "STRONG BUY") conf = 88 + Math.min(7, Math.round((buyStrength - 85) / 2));
