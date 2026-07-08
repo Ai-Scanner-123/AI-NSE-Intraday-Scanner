@@ -621,7 +621,7 @@ function scan(){
   let side = document.getElementById("side").value;
 
   if(!price || !prev || !high || !low || !rsi || !ema9 || !ema20 || !capital || high <= low){
-    alert("कृपया सभी values सही भरें. Live EMA 9 और EMA 20 भी जरूरी है.");
+    alert("कृपया सभी values सही भरें। पहले FETCH LIVE DATA दबाएँ ताकि EMA 9 / EMA 20 भी भर जाएँ।");
     return;
   }
 
@@ -687,23 +687,20 @@ if(rsi < 28){
   sellScore -= 18;
 }
 
-// ===== Live EMA 9 / EMA 20 Trend Logic =====
-const emaBullish = price > ema9 && ema9 > ema20;
-const emaBearish = price < ema9 && ema9 < ema20;
-
-if(emaBullish){
+// ===== EMA 9 / EMA 20 Trend Logic =====
+if(price > ema9 && ema9 > ema20){
   buyScore += 22;
   sellScore -= 12;
-  reasons.push("✔ EMA trend bullish है: Price > EMA9 > EMA20");
+  reasons.push("✔ EMA bullish: Price > EMA 9 > EMA 20");
 }
-else if(emaBearish){
+else if(price < ema9 && ema9 < ema20){
   sellScore += 22;
   buyScore -= 12;
-  reasons.push("✔ EMA trend bearish है: Price < EMA9 < EMA20");
+  reasons.push("✔ EMA bearish: Price < EMA 9 < EMA 20");
 }
 else{
-  buyScore -= 10;
-  sellScore -= 10;
+  buyScore -= 8;
+  sellScore -= 8;
   warnings.push("⚠ EMA trend clear नहीं है: wait बेहतर");
 }
 
@@ -772,15 +769,7 @@ if (pos >= 80 && change > -0.20) {
 let finalSide = side;
 
 if(side === "auto"){
-  if(emaBullish && rsi > 55){
-    finalSide = "buy";
-  }
-  else if(emaBearish && rsi < 45){
-    finalSide = "sell";
-  }
-  else{
-    finalSide = buyScore >= sellScore ? "buy" : "sell";
-  }
+  finalSide = buyScore >= sellScore ? "buy" : "sell";
 }
 
 // ===== Support / Resistance Safe Filter =====
@@ -814,24 +803,21 @@ conf = clamp(Math.round(conf), 0, 95);
 let signal = "WAIT / AVOID";
 let cls = "wait";
 
-if(finalSide === "buy" && emaBullish && rsi > 55 && conf >= 85 && warnings.length <= 2){
+if(finalSide === "buy" && price > ema9 && ema9 > ema20 && rsi > 55 && conf >= 85 && warnings.length <= 2){
   signal = "STRONG BUY";
   cls = "buy";
 }
-else if(finalSide === "buy" && emaBullish && rsi >= 50 && conf >= 68){
+else if(finalSide === "buy" && conf >= 68){
   signal = "BUY";
   cls = "buy";
 }
-else if(finalSide === "sell" && emaBearish && rsi < 45 && conf >= 85 && warnings.length <= 2){
+else if(finalSide === "sell" && price < ema9 && ema9 < ema20 && rsi < 45 && conf >= 85 && warnings.length <= 2){
   signal = "STRONG SELL";
   cls = "sell";
 }
-else if(finalSide === "sell" && emaBearish && rsi <= 50 && conf >= 68){
+else if(finalSide === "sell" && conf >= 68){
   signal = "SELL";
   cls = "sell";
-}
-else{
-  warnings.push("⚠ EMA + RSI confirmation complete नहीं है: WAIT");
 }
 
 // ===== Grade =====
@@ -918,8 +904,8 @@ let grade = conf >= 88 ? "A+" :
     <div class="row"><b>Max Risk</b><span>${money(riskAmt)} approx.</span></div>
     <div class="row"><b>Day Position</b><span>${pos.toFixed(1)}% of range</span></div>
     <div class="row"><b>Change vs Prev Close</b><span>${change.toFixed(2)}%</span></div>
-    <div class="row"><b>EMA 9</b><span>${money(ema9)}</span></div>
-    <div class="row"><b>EMA 20</b><span>${money(ema20)}</span></div>
+    <div class="row"><b>EMA 9</b><span>${ema9.toFixed(2)}</span></div>
+    <div class="row"><b>EMA 20</b><span>${ema20.toFixed(2)}</span></div>
 
     <div class="reason">
       ${reasons.map(x => `<div class="good">${x}</div>`).join("")}
