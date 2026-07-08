@@ -687,58 +687,46 @@ function scan(){
   const warnings = [];
 
   const buyChecks = [
-    { ok: price > ema9, weight: 2, text: "Price EMA 9 के ऊपर है" },
-    { ok: ema9 > ema20, weight: 3, text: "EMA trend bullish है: EMA 9 > EMA 20" },
-    { ok: rsi > 55, weight: 2, text: "RSI bullish zone में है" },
-    { ok: macd > macdSignal, weight: 2, text: "MACD Signal line के ऊपर है" },
-    { ok: histogram > 0, weight: 1, text: "Histogram positive है" },
-    { ok: price > prev, weight: 2, text: "Price previous close के ऊपर है" },
-    { ok: trend === "bullish", weight: 1, text: "Market bullish है" }
+    { ok: price > ema9, text: "Price EMA 9 के ऊपर है" },
+    { ok: ema9 > ema20, text: "EMA 9 EMA 20 के ऊपर है" },
+    { ok: rsi > 55, text: "RSI 55 के ऊपर bullish है" },
+    { ok: macd > macdSignal, text: "MACD Signal line के ऊपर है" },
+    { ok: histogram > 0, text: "Histogram positive है" },
+    { ok: price > prev, text: "Price previous close के ऊपर है" },
+    { ok: vol === "high", text: "High RVOL है" },
+    { ok: trend === "bullish", text: "Market bullish है" }
   ];
 
   const sellChecks = [
-    { ok: price < ema9, weight: 2, text: "Price EMA 9 के नीचे है" },
-    { ok: ema9 < ema20, weight: 3, text: "EMA trend bearish है: EMA 9 < EMA 20" },
-    { ok: rsi < 45, weight: 2, text: "RSI bearish zone में है" },
-    { ok: macd < macdSignal, weight: 2, text: "MACD Signal line के नीचे है" },
-    { ok: histogram < 0, weight: 1, text: "Histogram negative है" },
-    { ok: price < prev, weight: 2, text: "Price previous close के नीचे है" },
-    { ok: trend === "bearish", weight: 1, text: "Market bearish है" }
+    { ok: price < ema9, text: "Price EMA 9 के नीचे है" },
+    { ok: ema9 < ema20, text: "EMA 9 EMA 20 के नीचे है" },
+    { ok: rsi < 45, text: "RSI 45 के नीचे bearish है" },
+    { ok: macd < macdSignal, text: "MACD Signal line के नीचे है" },
+    { ok: histogram < 0, text: "Histogram negative है" },
+    { ok: price < prev, text: "Price previous close के नीचे है" },
+    { ok: vol === "high", text: "High RVOL है" },
+    { ok: trend === "bearish", text: "Market bearish है" }
   ];
-
-  const maxDirectionalScore = buyChecks.reduce((sum, x) => sum + x.weight, 0);
-  let buyScore = buyChecks.filter(x => x.ok).reduce((sum, x) => sum + x.weight, 0);
-  let sellScore = sellChecks.filter(x => x.ok).reduce((sum, x) => sum + x.weight, 0);
 
   let buyConfirm = buyChecks.filter(x => x.ok).length;
   let sellConfirm = sellChecks.filter(x => x.ok).length;
 
-  // Volume direction नहीं बताता; यह सिर्फ trade quality बताता है.
-  let qualityBonus = 0;
-  if(vol === "high") qualityBonus = 8;
-  if(vol === "normal") qualityBonus = 3;
-  if(vol === "low") qualityBonus = -15;
-
-  let buyStrength = clamp(Math.round((buyScore / maxDirectionalScore) * 100), 0, 100);
-  let sellStrength = clamp(Math.round((sellScore / maxDirectionalScore) * 100), 0, 100);
-  let strengthGap = Math.abs(buyStrength - sellStrength);
-
+  // Manual side select करने पर भी opposite confirmation strong हो तो forced trade नहीं देगा.
   let finalSide = "wait";
   let signal = "WAIT / CONFIRMATION";
   let cls = "wait";
 
-  // Manual side select करने पर भी opposite strength strong हो तो forced trade नहीं देगा.
   if(side === "buy"){
-    if(buyStrength >= 70 && sellStrength <= 35 && strengthGap >= 30) finalSide = "buy";
+    if(buyConfirm >= 6 && sellConfirm <= 3) finalSide = "buy";
   }
   else if(side === "sell"){
-    if(sellStrength >= 70 && buyStrength <= 35 && strengthGap >= 30) finalSide = "sell";
+    if(sellConfirm >= 6 && buyConfirm <= 3) finalSide = "sell";
   }
   else{
-    if(buyStrength >= 85 && sellStrength <= 30 && strengthGap >= 45) finalSide = "buyStrong";
-    else if(buyStrength >= 70 && sellStrength <= 40 && strengthGap >= 30) finalSide = "buy";
-    else if(sellStrength >= 85 && buyStrength <= 30 && strengthGap >= 45) finalSide = "sellStrong";
-    else if(sellStrength >= 70 && buyStrength <= 40 && strengthGap >= 30) finalSide = "sell";
+    if(buyConfirm >= 7 && sellConfirm <= 3) finalSide = "buyStrong";
+    else if(buyConfirm >= 6 && sellConfirm <= 4) finalSide = "buy";
+    else if(sellConfirm >= 7 && buyConfirm <= 3) finalSide = "sellStrong";
+    else if(sellConfirm >= 6 && buyConfirm <= 4) finalSide = "sell";
   }
 
   if(finalSide === "buyStrong") { signal = "STRONG BUY"; cls = "buy"; }
@@ -748,30 +736,21 @@ function scan(){
 
   if(cls === "buy"){
     buyChecks.filter(x => x.ok).forEach(x => reasons.push("✔ " + x.text));
-    if(vol === "high") reasons.push("✔ High RVOL: move strong है");
-
-    // Sirf real bearish conditions ko caution me dikhayenge.
-    // High RVOL direction-neutral hai, isliye kabhi BUY ke against nahi dikhana.
     sellChecks
-      .filter(x => x.ok && !x.text.includes("RVOL") && !x.text.includes("Volume"))
+      .filter(x => x.ok && !x.text.includes("High RVOL"))
       .slice(0,3)
-      .forEach(x => warnings.push("⚠ Caution: " + x.text));
+      .forEach(x => warnings.push("⚠ Buy के against: " + x.text));
   }
   else if(cls === "sell"){
     sellChecks.filter(x => x.ok).forEach(x => reasons.push("✔ " + x.text));
-    if(vol === "high") reasons.push("✔ High RVOL: move strong है");
-
-    // Sirf real bullish conditions ko caution me dikhayenge.
-    // High RVOL direction-neutral hai, isliye kabhi SELL ke against nahi dikhana.
     buyChecks
-      .filter(x => x.ok && !x.text.includes("RVOL") && !x.text.includes("Volume"))
+      .filter(x => x.ok && !x.text.includes("High RVOL"))
       .slice(0,3)
-      .forEach(x => warnings.push("⚠ Caution: " + x.text));
+      .forEach(x => warnings.push("⚠ Sell के against: " + x.text));
   }
   else{
-    reasons.push(`➜ Bullish strength: ${buyStrength}% (${buyScore}/${maxDirectionalScore})`);
-    reasons.push(`➜ Bearish strength: ${sellStrength}% (${sellScore}/${maxDirectionalScore})`);
-    if(vol === "high") reasons.push("➜ High RVOL है, लेकिन direction full align नहीं है");
+    reasons.push(`➜ Buy confirmations: ${buyConfirm}/8`);
+    reasons.push(`➜ Sell confirmations: ${sellConfirm}/8`);
     warnings.push("⚠ Full alignment नहीं है, इसलिए WAIT बेहतर है");
   }
 
@@ -782,19 +761,12 @@ function scan(){
   if(vol === "low") warnings.push("⚠ Low RVOL: trade avoid बेहतर");
   if(trend === "sideways") warnings.push("⚠ Sideways market: wait बेहतर");
 
-  // Safety cleanup: High RVOL kabhi bhi opposite/against warning nahi hoga.
-  for(let i = warnings.length - 1; i >= 0; i--){
-    if(warnings[i].includes("High RVOL") && warnings[i].includes("against")) warnings.splice(i, 1);
-  }
-
   let conf;
-  if(signal === "STRONG BUY") conf = 88 + Math.min(7, Math.round((buyStrength - 85) / 2));
-  else if(signal === "BUY") conf = 72 + Math.min(10, Math.round((buyStrength - 70) / 2));
-  else if(signal === "STRONG SELL") conf = 88 + Math.min(7, Math.round((sellStrength - 85) / 2));
-  else if(signal === "SELL") conf = 72 + Math.min(10, Math.round((sellStrength - 70) / 2));
-  else conf = 45 + Math.min(17, Math.round(Math.max(buyStrength, sellStrength) / 5));
-
-  conf += qualityBonus;
+  if(signal === "STRONG BUY") conf = 88 + Math.min(7, buyConfirm - 7);
+  else if(signal === "BUY") conf = 72 + Math.min(8, buyConfirm - 6);
+  else if(signal === "STRONG SELL") conf = 88 + Math.min(7, sellConfirm - 7);
+  else if(signal === "SELL") conf = 72 + Math.min(8, sellConfirm - 6);
+  else conf = 45 + Math.min(15, Math.max(buyConfirm, sellConfirm) * 2);
 
   if(warnings.length >= 4 && signal !== "WAIT / CONFIRMATION"){
     warnings.push("⚠ Warnings ज्यादा हैं, signal WAIT में downgrade किया गया");
@@ -859,8 +831,8 @@ function scan(){
     <div style="text-align:center;margin:8px 0">
       <span class="pill">Confidence ${conf}%</span>
       <span class="pill">Grade ${grade}</span>
-      <span class="pill">Bullish ${buyStrength}%</span>
-      <span class="pill">Bearish ${sellStrength}%</span>
+      <span class="pill">Buy ${buyConfirm}/8</span>
+      <span class="pill">Sell ${sellConfirm}/8</span>
     </div>
 
     <div class="big ${tradeClass}" style="font-size:24px;margin:10px 0;">
