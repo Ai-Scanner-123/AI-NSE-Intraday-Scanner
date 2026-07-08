@@ -297,6 +297,16 @@ Stock name डालकर Fetch Live Data दबाएँ। Example: EXIDEIND,
   </div>
 
   <div>
+    <label>EMA 9</label>
+    <input id="ema9" type="number" step="0.01" placeholder="Live EMA 9">
+  </div>
+
+  <div>
+    <label>EMA 20</label>
+    <input id="ema20" type="number" step="0.01" placeholder="Live EMA 20">
+  </div>
+
+  <div>
     <label>Capital Amount ₹</label>
     <input id="capital" type="number" value="50000">
   </div>
@@ -365,11 +375,17 @@ function fillQuote(q){
 
   if (q.rsi !== undefined && q.rsi !== null) {
     setVal("rsi", q.rsi);
-} else {
-    setVal("rsi", "N/A");
-}
+  }
 
-  return { price, prev, high, low };
+  if (q.ema9 !== undefined && q.ema9 !== null) {
+    setVal("ema9", q.ema9);
+  }
+
+  if (q.ema20 !== undefined && q.ema20 !== null) {
+    setVal("ema20", q.ema20);
+  }
+
+  return { price, prev, high, low, rsi: q.rsi, ema9: q.ema9, ema20: q.ema20 };
 }
 
 
@@ -596,14 +612,16 @@ function scan(){
   let high = n("high");
   let low = n("low");
   let rsi = n("rsi");
+  let ema9 = n("ema9");
+  let ema20 = n("ema20");
   let capital = n("capital");
 
   let vol = document.getElementById("vol").value;
   let trend = document.getElementById("trend").value;
   let side = document.getElementById("side").value;
 
-  if(!price || !prev || !high || !low || !rsi || !capital || high <= low){
-    alert("कृपया सभी values सही भरें");
+  if(!price || !prev || !high || !low || !rsi || !ema9 || !ema20 || !capital || high <= low){
+    alert("कृपया सभी values सही भरें. Live EMA 9 और EMA 20 भी जरूरी है.");
     return;
   }
 
@@ -667,6 +685,26 @@ if(rsi > 72){
 if(rsi < 28){
   warnings.push("⚠ RSI oversold: sell avoid करें");
   sellScore -= 18;
+}
+
+// ===== Live EMA 9 / EMA 20 Trend Logic =====
+const emaBullish = price > ema9 && ema9 > ema20;
+const emaBearish = price < ema9 && ema9 < ema20;
+
+if(emaBullish){
+  buyScore += 22;
+  sellScore -= 12;
+  reasons.push("✔ EMA trend bullish है: Price > EMA9 > EMA20");
+}
+else if(emaBearish){
+  sellScore += 22;
+  buyScore -= 12;
+  reasons.push("✔ EMA trend bearish है: Price < EMA9 < EMA20");
+}
+else{
+  buyScore -= 10;
+  sellScore -= 10;
+  warnings.push("⚠ EMA trend clear नहीं है: wait बेहतर");
 }
 
 // ===== Volume Logic =====
@@ -734,7 +772,15 @@ if (pos >= 80 && change > -0.20) {
 let finalSide = side;
 
 if(side === "auto"){
-  finalSide = buyScore >= sellScore ? "buy" : "sell";
+  if(emaBullish && rsi > 55){
+    finalSide = "buy";
+  }
+  else if(emaBearish && rsi < 45){
+    finalSide = "sell";
+  }
+  else{
+    finalSide = buyScore >= sellScore ? "buy" : "sell";
+  }
 }
 
 // ===== Support / Resistance Safe Filter =====
@@ -768,21 +814,24 @@ conf = clamp(Math.round(conf), 0, 95);
 let signal = "WAIT / AVOID";
 let cls = "wait";
 
-if(finalSide === "buy" && conf >= 85 && warnings.length <= 2){
+if(finalSide === "buy" && emaBullish && rsi > 55 && conf >= 85 && warnings.length <= 2){
   signal = "STRONG BUY";
   cls = "buy";
 }
-else if(finalSide === "buy" && conf >= 68){
+else if(finalSide === "buy" && emaBullish && rsi >= 50 && conf >= 68){
   signal = "BUY";
   cls = "buy";
 }
-else if(finalSide === "sell" && conf >= 85 && warnings.length <= 2){
+else if(finalSide === "sell" && emaBearish && rsi < 45 && conf >= 85 && warnings.length <= 2){
   signal = "STRONG SELL";
   cls = "sell";
 }
-else if(finalSide === "sell" && conf >= 68){
+else if(finalSide === "sell" && emaBearish && rsi <= 50 && conf >= 68){
   signal = "SELL";
   cls = "sell";
+}
+else{
+  warnings.push("⚠ EMA + RSI confirmation complete नहीं है: WAIT");
 }
 
 // ===== Grade =====
@@ -869,6 +918,8 @@ let grade = conf >= 88 ? "A+" :
     <div class="row"><b>Max Risk</b><span>${money(riskAmt)} approx.</span></div>
     <div class="row"><b>Day Position</b><span>${pos.toFixed(1)}% of range</span></div>
     <div class="row"><b>Change vs Prev Close</b><span>${change.toFixed(2)}%</span></div>
+    <div class="row"><b>EMA 9</b><span>${money(ema9)}</span></div>
+    <div class="row"><b>EMA 20</b><span>${money(ema20)}</span></div>
 
     <div class="reason">
       ${reasons.map(x => `<div class="good">${x}</div>`).join("")}
