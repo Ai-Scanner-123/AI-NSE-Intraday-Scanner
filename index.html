@@ -292,6 +292,11 @@ Stock name डालकर Fetch Live Data दबाएँ। Example: EXIDEIND,
   </div>
 
   <div>
+    <label>VWAP</label>
+    <input id="vwap" type="number" step="0.01" placeholder="Live VWAP">
+  </div>
+
+  <div>
     <label>ATR 14</label>
     <input id="atr" type="number" step="0.01" placeholder="Live ATR 14">
   </div>
@@ -405,11 +410,13 @@ function fillQuote(q){
   let prev  = q.previousClose || q.prevClose || q.close || price;
   let high  = q.high || q.dayHigh || price;
   let low   = q.low || q.dayLow || price;
+  let vwap  = q.vwap || q.avgPrice || q.averagePrice || q.averageTradedPrice || price;
 
   setVal("price", price);
   setVal("prev", prev);
   setVal("high", high);
   setVal("low", low);
+  setVal("vwap", vwap);
 
   if (q.atr !== undefined && q.atr !== null) {
     setVal("atr", q.atr);
@@ -446,7 +453,7 @@ function fillQuote(q){
     setTextVal("macdStatus", q.macdStatus);
   }
 
-  return { price, prev, high, low, atr: q.atr, rsi: q.rsi, ema9: q.ema9, ema20: q.ema20, macd: macdValue, signal: signalValue, histogram: q.histogram, macdStatus: q.macdStatus };
+  return { price, prev, high, low, vwap, atr: q.atr, rsi: q.rsi, ema9: q.ema9, ema20: q.ema20, macd: macdValue, signal: signalValue, histogram: q.histogram, macdStatus: q.macdStatus };
 }
 
 
@@ -671,6 +678,7 @@ function scan(){
   let prev = n("prev");
   let high = n("high");
   let low = n("low");
+  let vwap = n("vwap");
   let atr = n("atr");
   let rsi = n("rsi");
   let ema9 = n("ema9");
@@ -684,8 +692,8 @@ function scan(){
   let trend = document.getElementById("trend").value;
   let side = document.getElementById("side").value;
 
-  if(!price || !prev || !high || !low || !atr || !rsi || !ema9 || !ema20 || !hasInputValue("macd") || !hasInputValue("macdSignal") || !hasInputValue("histogram") || !capital || high <= low){
-    alert("कृपया सभी values सही भरें। पहले FETCH LIVE DATA दबाएँ ताकि ATR, RSI, EMA और MACD भर जाएँ।");
+  if(!price || !prev || !high || !low || !vwap || !atr || !rsi || !ema9 || !ema20 || !hasInputValue("macd") || !hasInputValue("macdSignal") || !hasInputValue("histogram") || !capital || high <= low){
+    alert("कृपया सभी values सही भरें। पहले FETCH LIVE DATA दबाएँ ताकि VWAP, ATR, RSI, EMA और MACD भर जाएँ।");
     return;
   }
 
@@ -703,6 +711,7 @@ function scan(){
     { ok: macd > macdSignal, text: "MACD Signal line के ऊपर है" },
     { ok: histogram > 0, text: "Histogram positive है" },
     { ok: price > prev, text: "Price previous close के ऊपर है" },
+    { ok: price > vwap, text: "Price VWAP के ऊपर है" },
     { ok: vol === "high", text: "High RVOL है" },
     { ok: trend === "bullish", text: "Market bullish है" }
   ];
@@ -714,6 +723,7 @@ function scan(){
     { ok: macd < macdSignal, text: "MACD Signal line के नीचे है" },
     { ok: histogram < 0, text: "Histogram negative है" },
     { ok: price < prev, text: "Price previous close के नीचे है" },
+    { ok: price < vwap, text: "Price VWAP के नीचे है" },
     { ok: vol === "high", text: "High RVOL है" },
     { ok: trend === "bearish", text: "Market bearish है" }
   ];
@@ -759,8 +769,8 @@ function scan(){
       .forEach(x => warnings.push("⚠ Sell के against: " + x.text));
   }
   else{
-    reasons.push(`➜ Buy confirmations: ${buyConfirm}/8`);
-    reasons.push(`➜ Sell confirmations: ${sellConfirm}/8`);
+    reasons.push(`➜ Buy confirmations: ${buyConfirm}/9`);
+    reasons.push(`➜ Sell confirmations: ${sellConfirm}/9`);
     warnings.push("⚠ Full alignment नहीं है, इसलिए WAIT बेहतर है");
   }
 
@@ -771,6 +781,14 @@ function scan(){
   if(vol === "low") warnings.push("⚠ Low RVOL: trade avoid बेहतर");
   if(trend === "sideways") warnings.push("⚠ Sideways market: wait बेहतर");
 
+  const minAtr = price * 0.0005;
+  const lowAtr = atr > 0 && atr < minAtr;
+  const vwapGap = Math.abs(price - vwap);
+  const vwapNear = atr > 0 ? vwapGap <= atr * 0.25 : vwapGap <= price * 0.001;
+
+  if(lowAtr) warnings.push("⚠ ATR बहुत low है: movement कम है, NO TRADE बेहतर");
+  if(vwapNear) warnings.push("⚠ Price VWAP के बहुत पास है: false move/breakout risk");
+
   let conf;
   if(signal === "STRONG BUY") conf = 88 + Math.min(7, buyConfirm - 7);
   else if(signal === "BUY") conf = 72 + Math.min(8, buyConfirm - 6);
@@ -780,6 +798,13 @@ function scan(){
 
   if(warnings.length >= 4 && signal !== "WAIT / CONFIRMATION"){
     warnings.push("⚠ Warnings ज्यादा हैं, signal WAIT में downgrade किया गया");
+    signal = "WAIT / CONFIRMATION";
+    cls = "wait";
+    conf = Math.min(conf, 62);
+  }
+
+  if((lowAtr || vwapNear) && signal !== "WAIT / CONFIRMATION"){
+    warnings.push("⚠ ATR/VWAP safety filter active है, इसलिए WAIT बेहतर है");
     signal = "WAIT / CONFIRMATION";
     cls = "wait";
     conf = Math.min(conf, 62);
@@ -809,21 +834,22 @@ function scan(){
   }
 
   let tradeSide = cls === "sell" ? "sell" : "buy";
-  let slDist = Math.max(range * 0.28, price * 0.004);
+  let atrGap = atr > 0 ? atr : Math.max(range * 0.28, price * 0.004);
+  let slDist = atr > 0 ? Math.max(atrGap * 1.5, price * 0.004) : atrGap;
   let entry = price;
   let sl, t1, t2, t3;
 
   if(tradeSide === "buy"){
     sl = price - slDist;
-    t1 = price + slDist * 1.5;
-    t2 = price + slDist * 2.2;
-    t3 = price + slDist * 3;
+    t1 = price + atrGap * 2;
+    t2 = price + atrGap * 3;
+    t3 = price + atrGap * 4;
   }
   else{
     sl = price + slDist;
-    t1 = price - slDist * 1.5;
-    t2 = price - slDist * 2.2;
-    t3 = price - slDist * 3;
+    t1 = price - atrGap * 2;
+    t2 = price - atrGap * 3;
+    t3 = price - atrGap * 4;
   }
 
   let riskPerShare = Math.abs(entry - sl);
@@ -841,8 +867,8 @@ function scan(){
     <div style="text-align:center;margin:8px 0">
       <span class="pill">Confidence ${conf}%</span>
       <span class="pill">Grade ${grade}</span>
-      <span class="pill">Buy ${buyConfirm}/8</span>
-      <span class="pill">Sell ${sellConfirm}/8</span>
+      <span class="pill">Buy ${buyConfirm}/9</span>
+      <span class="pill">Sell ${sellConfirm}/9</span>
     </div>
 
     <div class="big ${tradeClass}" style="font-size:24px;margin:10px 0;">
@@ -859,6 +885,7 @@ function scan(){
     <div class="row"><b>Max Risk</b><span>${money(riskAmt)} approx.</span></div>
     <div class="row"><b>Day Position</b><span>${pos.toFixed(1)}% of range</span></div>
     <div class="row"><b>Change vs Prev Close</b><span>${change.toFixed(2)}%</span></div>
+    <div class="row"><b>VWAP</b><span>${vwap.toFixed(2)}</span></div>
     <div class="row"><b>ATR 14</b><span>${atr.toFixed(2)}</span></div>
     <div class="row"><b>RSI</b><span>${rsi.toFixed(2)}</span></div>
     <div class="row"><b>EMA 9</b><span>${ema9.toFixed(2)}</span></div>
