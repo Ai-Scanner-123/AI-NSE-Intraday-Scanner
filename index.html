@@ -292,6 +292,11 @@ Stock name डालकर Fetch Live Data दबाएँ। Example: EXIDEIND,
   </div>
 
   <div>
+    <label>ATR 14</label>
+    <input id="atr" type="number" step="0.01" placeholder="Live ATR 14">
+  </div>
+
+  <div>
     <label>RSI</label>
     <input id="rsi" type="number" step="0.01" placeholder="RSI 0-100">
   </div>
@@ -406,6 +411,10 @@ function fillQuote(q){
   setVal("high", high);
   setVal("low", low);
 
+  if (q.atr !== undefined && q.atr !== null) {
+    setVal("atr", q.atr);
+  }
+
   if (q.rsi !== undefined && q.rsi !== null) {
     setVal("rsi", q.rsi);
   }
@@ -437,7 +446,7 @@ function fillQuote(q){
     setTextVal("macdStatus", q.macdStatus);
   }
 
-  return { price, prev, high, low, rsi: q.rsi, ema9: q.ema9, ema20: q.ema20, macd: macdValue, signal: signalValue, histogram: q.histogram, macdStatus: q.macdStatus };
+  return { price, prev, high, low, atr: q.atr, rsi: q.rsi, ema9: q.ema9, ema20: q.ema20, macd: macdValue, signal: signalValue, histogram: q.histogram, macdStatus: q.macdStatus };
 }
 
 
@@ -662,6 +671,7 @@ function scan(){
   let prev = n("prev");
   let high = n("high");
   let low = n("low");
+  let atr = n("atr");
   let rsi = n("rsi");
   let ema9 = n("ema9");
   let ema20 = n("ema20");
@@ -674,8 +684,8 @@ function scan(){
   let trend = document.getElementById("trend").value;
   let side = document.getElementById("side").value;
 
-  if(!price || !prev || !high || !low || !rsi || !ema9 || !ema20 || !hasInputValue("macd") || !hasInputValue("macdSignal") || !hasInputValue("histogram") || !capital || high <= low){
-    alert("कृपया सभी values सही भरें। पहले FETCH LIVE DATA दबाएँ ताकि RSI, EMA और MACD भर जाएँ।");
+  if(!price || !prev || !high || !low || !atr || !rsi || !ema9 || !ema20 || !hasInputValue("macd") || !hasInputValue("macdSignal") || !hasInputValue("histogram") || !capital || high <= low){
+    alert("कृपया सभी values सही भरें। पहले FETCH LIVE DATA दबाएँ ताकि ATR, RSI, EMA और MACD भर जाएँ।");
     return;
   }
 
@@ -849,6 +859,7 @@ function scan(){
     <div class="row"><b>Max Risk</b><span>${money(riskAmt)} approx.</span></div>
     <div class="row"><b>Day Position</b><span>${pos.toFixed(1)}% of range</span></div>
     <div class="row"><b>Change vs Prev Close</b><span>${change.toFixed(2)}%</span></div>
+    <div class="row"><b>ATR 14</b><span>${atr.toFixed(2)}</span></div>
     <div class="row"><b>RSI</b><span>${rsi.toFixed(2)}</span></div>
     <div class="row"><b>EMA 9</b><span>${ema9.toFixed(2)}</span></div>
     <div class="row"><b>EMA 20</b><span>${ema20.toFixed(2)}</span></div>
