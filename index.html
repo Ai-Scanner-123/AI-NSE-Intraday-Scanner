@@ -410,7 +410,8 @@ function fillQuote(q){
   let prev  = q.previousClose || q.prevClose || q.close || price;
   let high  = q.high || q.dayHigh || price;
   let low   = q.low || q.dayLow || price;
-  let vwap  = q.vwap || q.avgPrice || q.averagePrice || q.averageTradedPrice || price;
+  let vwapRaw = q.vwap || q.avgPrice || q.averagePrice || q.averageTradedPrice || q.averageTradePrice;
+  let vwap  = vwapRaw || ((Number(high) + Number(low) + Number(price)) / 3);
 
   setVal("price", price);
   setVal("prev", prev);
@@ -692,8 +693,15 @@ function scan(){
   let trend = document.getElementById("trend").value;
   let side = document.getElementById("side").value;
 
-  if(!price || !prev || !high || !low || !vwap || !atr || !rsi || !ema9 || !ema20 || !hasInputValue("macd") || !hasInputValue("macdSignal") || !hasInputValue("histogram") || !capital || high <= low){
-    alert("कृपया सभी values सही भरें। पहले FETCH LIVE DATA दबाएँ ताकि VWAP, ATR, RSI, EMA और MACD भर जाएँ।");
+  // Backend से VWAP न आए तो scanner रुकने के बजाय typical price को backup reference की तरह use करेगा.
+  // इससे existing flow disturb नहीं होगा और VWAP false-filter price के बराबर नहीं बनेगा.
+  if(!vwap && price && high && low){
+    vwap = (high + low + price) / 3;
+    setVal("vwap", vwap);
+  }
+
+  if(!price || !prev || !high || !low || !atr || !rsi || !ema9 || !ema20 || !hasInputValue("macd") || !hasInputValue("macdSignal") || !hasInputValue("histogram") || !capital || high <= low){
+    alert("कृपया सभी values सही भरें। पहले FETCH LIVE DATA दबाएँ ताकि ATR, RSI, EMA और MACD भर जाएँ।");
     return;
   }
 
